@@ -1,0 +1,56 @@
+import enum
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Time, Text, Enum as SAEnum, ForeignKey, Numeric
+from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship, Session
+from database import Base
+
+class UserRoleEnum(str, enum.Enum):
+    ceo              = "ceo"
+    sales_manager    = "sales_manager"
+    customer_support = "customer_support"
+    site_engineer    = "site_engineer"
+    accountant       = "accountant"
+    agent            = "agent"
+
+class LeadStatus(str, enum.Enum):
+    new = "new"
+    contacted = "contacted"
+    site_visit = "site_visit"
+    quotation = "quotation"
+    negotiation = "negotiation"
+    closed_won = "closed_won"
+    closed_lost = "closed_lost"
+
+class LeadSource(str, enum.Enum):
+    meta_ad   = "meta_ad"
+    google_ad = "google_ad"
+    referral  = "referral"
+    walk_in   = "walk_in"
+    other     = "other"
+
+class UserModel(Base):
+    __tablename__ = "users"
+    id              = Column(Integer, primary_key=True, index=True)
+    username        = Column(String(50),  unique=True, nullable=False, index=True)
+    full_name       = Column(String(100), nullable=True)
+    email           = Column(String(255), unique=True, nullable=False)
+    hashed_password = Column(String,      nullable=False)
+    disabled        = Column(Boolean,     default=False)
+    role            = Column(SAEnum(UserRoleEnum, name="user_role", create_type=False),
+                             default=UserRoleEnum.customer_support)
+    created_at      = Column(DateTime, server_default=func.now())
+    last_login      = Column(DateTime, nullable=True)
+
+class ConstructionLeadModel(Base):
+    __tablename__ = "construction_leads"
+    id          = Column(Integer, primary_key=True, index=True)
+    lead_code   = Column(String(50),  unique=True, nullable=False, index=True)
+    name        = Column(String(100), nullable=False)
+    phone       = Column(String(20),  nullable=False)
+    location    = Column(String(255), nullable=True)
+    requirement = Column(String,      nullable=True)
+    status      = Column(SAEnum(LeadStatus, name="lead_status", create_type=False),
+                         default=LeadStatus.new)
+    source      = Column(SAEnum(LeadSource, name="lead_source", create_type=False),
+                         default=LeadSource.meta_ad)
+    created_at  = Column(DateTime, server_default=func.now())
