@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext, API_BASE_URL } from '../context/AppContext';
 
 const AddLeadPage = () => {
   const navigate = useNavigate();
@@ -21,8 +21,8 @@ const AddLeadPage = () => {
 
     try {
       const endpoint = formData.lt === 'amc' 
-        ? {`${API_BASE_URL}/amc-leads/Import_Leads_csv_amc`}
-        : {`${API_BASE_URL}/construction-leads/Import_Leads_csv_construction`};
+        ? `${API_BASE_URL}/amc-leads/Import_Leads_csv_amc`
+        : `${API_BASE_URL}/construction-leads/Import_Leads_csv_construction`;
 
       await axios.post(endpoint, formDataImport, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -34,7 +34,6 @@ const AddLeadPage = () => {
     } catch (error) {
       console.error("Error importing leads:", error);
       toast('❌ Failed to import leads', 'error');
-import { API_BASE_URL } from '../context/AppContext';
     }
   };
 

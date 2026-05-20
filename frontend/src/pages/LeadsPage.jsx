@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext, API_BASE_URL } from '../context/AppContext';
 import LeadTable from '../components/leads/LeadTable';
 import Modal from '../components/common/Modal';
 
@@ -32,8 +32,8 @@ const LeadsPage = ({ type }) => {
 
     try {
       const endpoint = type === 'amc' 
-        ? {`${API_BASE_URL}/amc-leads/Import_Leads_csv_amc`}
-        : {`${API_BASE_URL}/construction-leads/Import_Leads_csv_construction`};
+        ? `${API_BASE_URL}/amc-leads/Import_Leads_csv_amc`
+        : `${API_BASE_URL}/construction-leads/Import_Leads_csv_construction`;
 
       await axios.post(endpoint, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -94,7 +94,6 @@ const LeadsPage = ({ type }) => {
             <div style={{ fontSize: '13px', color: 'var(--text3)', marginTop: '8px', lineHeight: '1.5' }}>
                Supported columns: <strong>name, phone, location, requirements</strong><br/>
                The import will automatically be tagged as <strong>{type.toUpperCase()}</strong>
-import { API_BASE_URL } from '../context/AppContext';
             </div>
             <button className="btn btn-sky btn-sm" style={{ marginTop: '20px' }}>Browse Files</button>
           </label>

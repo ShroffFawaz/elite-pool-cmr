@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext, API_BASE_URL } from '../context/AppContext';
 import { Navigate } from 'react-router-dom';
 import Modal from '../components/common/Modal';
 import StatusBadge from '../components/common/StatusBadge';
@@ -361,7 +361,7 @@ const DesignPage = () => {
                       </div>
                       {f.file_url && (
                         <>
-                          <a href={`/pool-design/file/${f.id}/view`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">👁 View</a>
+                          <a href={`${API_BASE_URL}/pool-design/file/${f.id}/view`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">👁 View</a>
                           <button className="btn btn-sm" style={{ background: 'var(--red)', color: '#fff', border: 'none' }} onClick={async () => {
                             if (!window.confirm(`Delete "${f.file_name}"?`)) return;
                             try {

@@ -106,9 +106,25 @@ async def get_account_details(site_name: str, db: Session = Depends(get_db)):
         expenses = db.query(m2a_expenses).filter(m2a_expenses.account_id == account.id).all()
         
         return {
-            "account": account,
-            "payments": payments,
-            "expenses": expenses
+            "account": {
+                "id": account.id,
+                "site_name": account.site_name,
+                "location": account.location,
+                "last_updated": str(account.last_updated)
+            },
+            "payments": [
+                {"amount": float(p.amount), "payment_date": str(p.payment_date)}
+                for p in payments
+            ],
+            "expenses": [
+                {
+                    "amount": float(e.amount),
+                    "expense_date": str(e.expense_date),
+                    "description": e.description,
+                    "expense_type": str(e.expense_type) if e.expense_type else None
+                }
+                for e in expenses
+            ]
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

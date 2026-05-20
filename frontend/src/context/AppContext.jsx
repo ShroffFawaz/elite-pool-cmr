@@ -19,32 +19,7 @@ export const AppProvider = ({ children }) => {
   const [constructionSites, setConstructionSites] = useState([]);
   const [amcSites, setAmcSites] = useState([]);
   const [procurements, setProcurements] = useState([]);
-  const [siteAccounts, setSiteAccounts] = useState([
-    {
-      id: 'SA001', siteName: 'Arjun Mehta Site', location: 'Banjara Hills, HYD', linkedSiteId: 'CS001', lastUpdated: '2025-04-24',
-      m2a: { payments: [{ amount: 1500000, date: '2025-04-20' }], expenditures: [] },
-      elitePool: {
-        construction: { payments: [{ amount: 500000, date: '2025-04-15' }], expenditures: [] },
-        amc: { payments: [], expenditures: [] }
-      }
-    },
-    {
-      id: 'SA002', siteName: 'Priya Reddy Site', location: 'Jubilee Hills, HYD', linkedSiteId: 'CS002', lastUpdated: '2025-04-22',
-      m2a: { payments: [{ amount: 1200000, date: '2025-04-18' }], expenditures: [] },
-      elitePool: {
-        construction: { payments: [{ amount: 300000, date: '2025-04-12' }], expenditures: [] },
-        amc: { payments: [], expenditures: [] }
-      }
-    },
-    {
-      id: 'SA003', siteName: 'Ananya Singh AMC', location: 'Madhapur, HYD', linkedSiteId: 'AMC001', lastUpdated: '2025-04-20',
-      m2a: { payments: [], expenditures: [] },
-      elitePool: {
-        construction: { payments: [], expenditures: [] },
-        amc: { payments: [{ amount: 80000, date: '2025-04-10' }], expenditures: [] }
-      }
-    },
-  ]);
+  const [siteAccounts, setSiteAccounts] = useState([]);
   const [officeExpenses, setOfficeExpenses] = useState({ salaries: [], rent: [], petty: [] });
   const [agents, setAgents] = useState([]);
   const [callLog, setCallLog] = useState([]);
@@ -365,7 +340,7 @@ export const AppProvider = ({ children }) => {
         const backendExpenses = (acc.expenses || []).map(e => ({ amount: parseFloat(e.amount), date: e.payment_date || e.expense_date, description: e.description, category: e.expenses_type || e.expense_type }));
 
         accounts.push({
-          id: acc.id,
+          id: 'ep_' + acc.id,
           siteName: acc.site_name,
           location: acc.location,
           projectType: type,
@@ -387,7 +362,7 @@ export const AppProvider = ({ children }) => {
         const backendExpenses = (acc.expenses || []).map(e => ({ amount: parseFloat(e.amount), date: e.expense_date || e.payment_date, description: e.description, category: e.expense_type }));
 
         accounts.push({
-          id: acc.id,
+          id: 'm2a_' + acc.id,
           siteName: acc.site_name,
           location: acc.location,
           isElitePool: false,
@@ -422,6 +397,7 @@ export const AppProvider = ({ children }) => {
       const { payments, expenses } = res.data;
 
       setSiteAccounts(prev => prev.map(s => {
+        // Must match BOTH site name AND the correct company — prevents cross-company ledger contamination
         if (s.siteName !== siteName) return s;
         if (companyType === 'elitePool' && !s.isElitePool) return s;
         if (companyType === 'm2a' && !s.isM2A) return s;
@@ -433,10 +409,11 @@ export const AppProvider = ({ children }) => {
             ...updated.elitePool,
             [target]: {
               payments: payments.map(p => ({ amount: parseFloat(p.amount), date: p.payment_date })),
-              expenditures: expenses.map(e => ({ amount: parseFloat(e.amount), date: e.payment_date, description: e.description, category: e.expenses_type }))
+              expenditures: expenses.map(e => ({ amount: parseFloat(e.amount), date: e.payment_date || e.expense_date, description: e.description, category: e.expenses_type }))
             }
           };
         } else {
+          // M2A: use expense_date (not payment_date) for expenses
           updated.m2a = {
             payments: payments.map(p => ({ amount: parseFloat(p.amount), date: p.payment_date })),
             expenditures: expenses.map(e => ({ amount: parseFloat(e.amount), date: e.expense_date || e.payment_date, description: e.description, category: e.expense_type }))

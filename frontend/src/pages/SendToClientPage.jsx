@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext, API_BASE_URL } from '../context/AppContext';
 import { Navigate } from 'react-router-dom';
 
 const SendToClientPage = () => {
@@ -47,8 +47,8 @@ const SendToClientPage = () => {
     // Handle WhatsApp redirection
     const cleanPhone = selectedLead.phone.replace(/\D/g, '');
     let docLinks = '';
-    if (leadQuote) docLinks += `\nQuotation: http://lvh.me:8000/quotation/file/${leadQuote.db_id}/quotation.pdf`;
-    if (leadDesign && leadDesign.uploadedFile) docLinks += `\nDesign Plan: http://lvh.me:8000/pool-design/file/${leadDesign.uploadedFile.id}/design_plan.pdf`;
+    if (leadQuote) docLinks += `\nQuotation: ${API_BASE_URL}/quotation/file/${leadQuote.db_id}/quotation.pdf`;
+    if (leadDesign && leadDesign.uploadedFile) docLinks += `\nDesign Plan: ${API_BASE_URL}/pool-design/file/${leadDesign.uploadedFile.id}/design_plan.pdf`;
 
     const message = encodeURIComponent(`Hello ${selectedLead.name}, this is from Elite Pool Builders. Please find your project documents below:${docLinks}`);
     const waUrl = `https://wa.me/${cleanPhone}?text=${message}`;

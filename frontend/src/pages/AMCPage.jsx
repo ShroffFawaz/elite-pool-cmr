@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext, API_BASE_URL } from '../context/AppContext';
 import { Navigate } from 'react-router-dom';
 import axios from 'axios';
 import Modal from '../components/common/Modal';
@@ -338,8 +338,8 @@ const AMCPage = () => {
                       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '8px' }}>
                         {l.photos.map((p, pi) => (
                           <div key={pi} style={{ position: 'relative', width: '120px', height: '90px', flexShrink: 0, borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                             <img src={`/amc/visit-photo/${p.id}/view`} alt="Service" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                             <a href={`/amc/visit-photo/${p.id}/view`} target="_blank" rel="noreferrer" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', opacity: 0, transition: '0.2s', color: '#fff', fontSize: '10px', textDecoration: 'none' }} onMouseEnter={e => e.currentTarget.style.opacity = 1} onMouseLeave={e => e.currentTarget.style.opacity = 0}>VIEW</a>
+                             <img src={`${API_BASE_URL}/amc/visit-photo/${p.id}/view`} alt="Service" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                             <a href={`${API_BASE_URL}/amc/visit-photo/${p.id}/view`} target="_blank" rel="noreferrer" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', opacity: 0, transition: '0.2s', color: '#fff', fontSize: '10px', textDecoration: 'none' }} onMouseEnter={e => e.currentTarget.style.opacity = 1} onMouseLeave={e => e.currentTarget.style.opacity = 0}>VIEW</a>
                           </div>
                         ))}
                       </div>

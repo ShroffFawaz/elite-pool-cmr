@@ -208,9 +208,26 @@ async def get_account_details(identifier: str, db: Session = Depends(get_db)):
         expenses = db.query(ElitePoolExpenses).filter(ElitePoolExpenses.account_id == account.id).all()
         
         return {
-            "account": account,
-            "payments": payments,
-            "expenses": expenses
+            "account": {
+                "id": account.id,
+                "site_name": account.site_name,
+                "location": account.location,
+                "project_type": account.project_type,
+                "last_update": str(account.last_update)
+            },
+            "payments": [
+                {"amount": float(p.amount), "payment_date": str(p.payment_date)}
+                for p in payments
+            ],
+            "expenses": [
+                {
+                    "amount": float(e.amount),
+                    "payment_date": str(e.payment_date),
+                    "description": e.description,
+                    "expenses_type": str(e.expenses_type) if e.expenses_type else None
+                }
+                for e in expenses
+            ]
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

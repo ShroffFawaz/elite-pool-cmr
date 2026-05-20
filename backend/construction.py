@@ -390,8 +390,12 @@ async def proxy_cloudinary_file(public_id: str, file_name: str):
                 if resp.status_code == 200: break
         except Exception: continue
 
-    if resp is None or resp.status_code != 200:
-        raise HTTPException(status_code=502, detail="Failed to fetch file from Cloudinary")
+    if resp is None:
+        raise HTTPException(status_code=502, detail="Failed to connect to Cloudinary")
+    if resp.status_code != 200:
+        if resp.status_code == 400 and "Missing public_ids" in resp.text:
+            raise HTTPException(status_code=404, detail="File not found on Cloudinary. The file may have been deleted or the database record is stale.")
+        raise HTTPException(status_code=502, detail=f"Failed to fetch file from Cloudinary (Status {resp.status_code})")
 
     import zipfile, io
     try:
