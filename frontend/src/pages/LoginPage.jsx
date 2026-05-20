@@ -8,9 +8,10 @@ const logo = "/favicon.png";
 const LoginPage = () => {
   const { setUser, toast } = useAppContext();
   const navigate = useNavigate();
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState('ceo');
+  const [showPassword, setShowPassword] = useState(false);
 
   const doLogin = async () => {
     if (!username || !password) { toast('Please enter all fields', 'error'); return; }
@@ -30,9 +31,16 @@ const LoginPage = () => {
 
       // 2. Get User Info
       const meRes = await axios.get('/user/view'); // In a real app we'd use /users/me
-      const myUser = meRes.data.find(u => u.username === username);
+      const myUser = meRes.data.find(u => u.username.toLowerCase() === username.toLowerCase());
 
       if (!myUser) throw new Error("User profile not found");
+
+      // Verify that the chosen role matches the user's role
+      if (myUser.role !== role) {
+        localStorage.removeItem('token');
+        delete axios.defaults.headers.common['Authorization'];
+        throw new Error("RoleMismatch");
+      }
 
       const userData = { 
         role: myUser.role, 
@@ -46,8 +54,16 @@ const LoginPage = () => {
       navigate('/dashboard');
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.detail || 'Authentication failed';
-      toast(typeof msg === 'string' ? msg : 'Invalid credentials', 'error');
+      // Clean up token on failure
+      localStorage.removeItem('token');
+      delete axios.defaults.headers.common['Authorization'];
+      
+      if (err.message === "RoleMismatch" || err.response?.status === 401) {
+        toast("Incorrect password or user's access role", 'error');
+      } else {
+        const msg = err.response?.data?.detail || err.message || 'Authentication failed';
+        toast(typeof msg === 'string' ? msg : 'Invalid credentials', 'error');
+      }
     }
   };
 
@@ -113,7 +129,51 @@ const LoginPage = () => {
 
           <div className="fg">
             <label className="fl">Password</label>
-            <input className="fi" type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && doLogin()} placeholder="••••••••" />
+            <div style={{ position: 'relative' }}>
+              <input 
+                className="fi" 
+                type={showPassword ? "text" : "password"} 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                onKeyDown={e => e.key === 'Enter' && doLogin()} 
+                placeholder="••••••••" 
+                style={{ paddingRight: '44px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text3)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'color 0.2s',
+                  zIndex: 2
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--sky)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text3)'}
+              >
+                {showPassword ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
 
           <button className="btn btn-sky" style={{ width: '100%', padding: '16px', marginTop: '12px', fontSize: '15px' }} onClick={doLogin}>Access Dashboard</button>

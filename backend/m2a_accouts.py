@@ -75,8 +75,12 @@ async def get_all_m2a_accounts(db: Session = Depends(get_db)):
     accounts = db.query(m2aAccounts).all()
     result = []
     for acc in accounts:
-        total_payment = db.query(func.sum(m2a_payments.amount)).filter(m2a_payments.account_id == acc.id).scalar() or 0
-        total_expense = db.query(func.sum(m2a_expenses.amount)).filter(m2a_expenses.account_id == acc.id).scalar() or 0
+        payments = db.query(m2a_payments).filter(m2a_payments.account_id == acc.id).all()
+        expenses = db.query(m2a_expenses).filter(m2a_expenses.account_id == acc.id).all()
+        
+        total_payment = sum(p.amount for p in payments)
+        total_expense = sum(e.amount for e in expenses)
+        
         result.append({
             "id": acc.id,
             "site_name": acc.site_name,
@@ -85,7 +89,9 @@ async def get_all_m2a_accounts(db: Session = Depends(get_db)):
             "last_updated": str(acc.last_updated),
             "created_at": str(acc.created_at),
             "total_recieved": float(total_payment),
-            "total_expense": float(total_expense)
+            "total_expense": float(total_expense),
+            "payments": [{"amount": float(p.amount), "payment_date": str(p.payment_date)} for p in payments],
+            "expenses": [{"amount": float(e.amount), "expense_date": str(e.expense_date), "description": e.description, "expense_type": e.expense_type} for e in expenses]
         })
     return result
 

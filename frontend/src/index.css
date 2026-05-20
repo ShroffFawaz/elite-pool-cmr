@@ -375,7 +375,21 @@ tr:hover td { background: rgba(255,255,255,0.01); }
 }
 
 @media (max-width: 768px) {
-  .app-container { flex-direction: column; }
+  /* ── Shell / Layout ── */
+  .app-container { 
+    flex-direction: column; 
+    height: 100%;
+    overflow-y: auto;
+  }
+  .main-content {
+    height: 100%;
+    overflow-y: auto;
+  }
+  .page-container {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
   .sidebar { 
     position: fixed; 
     left: -100%; 
@@ -386,40 +400,82 @@ tr:hover td { background: rgba(255,255,255,0.01); }
     box-shadow: 20px 0 50px rgba(0,0,0,0.5);
   }
   .sidebar.active { left: 0; }
-  .topbar { padding: 0 16px; height: 56px; }
-  .page { padding: 20px; gap: 20px; }
-  .fr { grid-template-columns: 1fr; gap: 16px; }
+  .topbar { padding: 0 12px; height: 56px; gap: 8px; }
+  .page { padding: 16px; gap: 16px; }
+
+  /* ── Page Headers ── */
+  .ph { flex-direction: column; gap: 8px; }
+  .ph-left, .ph-right { width: 100%; }
+  .ph-right { flex-wrap: wrap; }
+
+  /* ── Cards & Forms ── */
+  .card { padding: 14px; }
+  .fr { grid-template-columns: 1fr; gap: 14px; }
+  .fg { margin-bottom: 14px; }
+
+  /* ── Tables ── */
+  .tw { -webkit-overflow-scrolling: touch; border-radius: 10px; }
+  table { min-width: 520px; }
+  th, td { padding: 12px 14px; font-size: 12px; }
+  .table-toolbar { flex-direction: column; align-items: stretch; padding: 12px; gap: 10px; }
+  .table-toolbar-left { width: 100%; }
+  .table-toolbar-right { width: 100%; }
+  .table-toolbar-right .btn { flex: 1; }
+
+  /* ── Buttons ── */
+  .btn { justify-content: center; min-height: 44px; }
+  .page > div > .btn,
+  .page > .btn { width: 100%; }
+
+  /* ── Grids: force all inline CSS grids to stack ── */
+  .grid-3, .grid-4 { grid-template-columns: 1fr !important; }
+
+  /* ── Login ── */
   .login-container { flex-direction: column; overflow-y: auto !important; }
   .login-container > div:first-child { display: none !important; }
   .login-container > div:last-child { width: 100% !important; padding: 40px 20px !important; border-left: none !important; }
-  .grid-3, .grid-4 { grid-template-columns: 1fr !important; }
-  .card { padding: 16px; }
-  .tw { -webkit-overflow-scrolling: touch; border-radius: 12px; }
-  table { min-width: 600px; }
-  th:nth-child(n+4), td:nth-child(n+4) { display: none; }
-  .btn { width: 100%; justify-content: center; height: 48px; }
-  .table-toolbar-right { width: 100%; }
-  .table-toolbar-right .btn { flex: 1; }
+
+  /* ── Search ── */
+  .search-box { min-width: 100%; max-width: 100%; }
+
+  /* ── Modals ── */
+  .modal-container { max-width: 100%; border-radius: 14px; margin: 8px; }
+  .modal-container.wide { max-width: 100%; }
+  .modal-header { padding: 16px 18px; }
+  .modal-body { padding: 18px; }
+  .modal-footer { padding: 14px 18px; flex-direction: column; }
+  .modal-footer .btn { width: 100%; }
+
+  /* ── Header: notification dropdown ── */
+  .topbar [style*="width: 360px"],
+  .topbar [style*="width:360px"] {
+    width: calc(100vw - 24px) !important;
+    right: -60px !important;
+  }
+
+  /* ── Stat cards ── */
+  .stat [style*="font-size: 32px"] { font-size: 24px !important; }
 }
 
 @media (max-width: 480px) {
   :root { --r: 10px; }
-  .page { padding: 16px; gap: 16px; }
-  h1 { font-size: 24px !important; }
-  h2 { font-size: 20px !important; }
+  .page { padding: 12px; gap: 12px; }
+  h1 { font-size: 20px !important; }
+  h2 { font-size: 18px !important; }
+  .sidebar { width: 260px; }
+  .card { padding: 12px; }
   .modal-container { border-radius: 12px; max-height: 95vh; }
-  .modal-body { padding: 20px; }
-  .modal-footer { padding: 16px 20px; flex-direction: column; }
-  .modal-footer .btn { width: 100%; }
-  .search-box { min-width: 100%; margin-bottom: 12px; }
-  .table-toolbar { padding: 16px; }
-  .table-toolbar-left { width: 100%; }
+  .modal-body { padding: 14px; }
+  th, td { padding: 10px 12px; font-size: 11px; }
+  table { min-width: 450px; }
 }
 
 @media (max-width: 380px) {
   .logo-main { font-size: 13px; }
   .user-name { max-width: 100px; }
   .stat-value { font-size: 20px !important; }
+  .page { padding: 10px; }
+  .topbar { padding: 0 10px; }
 }
 
 .mobile-hide { display: none !important; }
@@ -442,3 +498,84 @@ tr:hover td { background: rgba(255,255,255,0.01); }
   transition: 0.3s;
 }
 .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+
+/* ══ TOASTS ══ */
+#toasts {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 14px 20px;
+  border-radius: 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  animation: slideInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 380px;
+}
+
+.toast.success { border-left: 4px solid var(--green); }
+.toast.error { border-left: 4px solid var(--red); }
+
+@keyframes slideInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ══ COMPONENT-LEVEL MOBILE OVERRIDES ══ */
+@media (max-width: 768px) {
+  /* Dashboard: stack main grid and bottom grid */
+  .dash-main-grid { grid-template-columns: 1fr !important; }
+  .dash-bottom-grid { grid-template-columns: 1fr !important; }
+
+  /* Pipeline: horizontal scroll for Kanban columns */
+  .pipeline-grid {
+    grid-template-columns: repeat(5, 260px) !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 12px;
+    min-height: auto !important;
+  }
+  .pipeline-grid > div {
+    scroll-snap-align: start;
+    min-width: 260px;
+  }
+
+  /* Notification dropdown: auto-position on mobile */
+  .notif-dropdown {
+    position: fixed !important;
+    top: 56px !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+  }
+
+  /* Toast positioning */
+  #toasts { right: 12px; left: 12px; top: 12px; }
+  .toast { max-width: 100%; font-size: 13px; }
+
+  /* Header right actions: tighten gap */
+  .topbar > div:last-child { gap: 8px !important; }
+
+  /* Agent grid in dashboard: 2 columns instead of 3 */
+  .card [style*="repeat(3, 1fr)"] { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Leads page button row: stack vertically */
+  .page > div[style*="display: flex"][style*="gap: 12px"] {
+    flex-direction: column;
+  }
+}

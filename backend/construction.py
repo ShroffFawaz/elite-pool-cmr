@@ -81,8 +81,22 @@ async def add_construction_site(
     if existing:
         raise HTTPException(status_code=400, detail=f"A site (Code: {existing.site_code}) already exists for this lead.")
 
-    count = db.query(func.count(ConstructionSiteModel.id)).scalar()
-    new_site_code = f"CS-{str(count + 1).zfill(3)}"
+    last_entry = db.query(ConstructionSiteModel).order_by(ConstructionSiteModel.id.desc()).first()
+    next_num = 1
+    if last_entry and last_entry.site_code:
+        parts = last_entry.site_code.split("-")
+        if len(parts) == 2 and parts[0] == "CS":
+            try:
+                next_num = int(parts[1]) + 1
+            except ValueError:
+                pass
+
+    while True:
+        new_site_code = f"CS-{str(next_num).zfill(3)}"
+        exists = db.query(ConstructionSiteModel.id).filter(ConstructionSiteModel.site_code == new_site_code).first()
+        if not exists:
+            break
+        next_num += 1
 
     new_site = ConstructionSiteModel(
         site_code=new_site_code,
@@ -93,6 +107,22 @@ async def add_construction_site(
     db.add(new_site)
     db.commit()
     db.refresh(new_site)
+    
+    # Trigger Construction Site Created Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="Construction Management",
+            action="Site Initialized",
+            message=f"Construction site '{new_site_code}' initialized for lead '{name}'.",
+            type="create",
+            entity_id=new_site_code,
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering site initialized notification:", e)
+
     return {"message": "Site initialized", "site_code": new_site.site_code}
 
 @router.delete("/delete-site/{site_code}")
@@ -103,6 +133,22 @@ async def delete_construction_site(site_code: str, db: Session = Depends(get_db)
     
     db.delete(site)
     db.commit()
+    
+    # Trigger Construction Site Deleted Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="Construction Management",
+            action="Site Deleted",
+            message=f"Construction site '{site_code}' has been deleted.",
+            type="delete",
+            entity_id=site_code,
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering site deleted notification:", e)
+
     return {"message": "Construction site deleted successfully"}
 
 
@@ -176,6 +222,22 @@ async def add_construction_logs(
                 db.add(photo_entry)
 
         db.commit()
+        
+        # Trigger Daily Log Submitted Notification
+        try:
+            from notifications import trigger_notification
+            trigger_notification(
+                db=db,
+                module="Construction Management",
+                action="Log Submitted",
+                message=f"Daily progress log submitted for site '{site_code}' (Labor: {labor_strength}).",
+                type="create",
+                entity_id=site_code,
+                actor_name="System"
+            )
+        except Exception as e:
+            print("Error triggering log submitted notification:", e)
+
         return {"message": "Daily log saved successfully"}
 
     except Exception as e:
@@ -256,6 +318,22 @@ async def uploading_plans(
                 )
                 db.add(plan_entry)
         db.commit()
+        
+        # Trigger Construction Plan Uploaded Notification
+        try:
+            from notifications import trigger_notification
+            trigger_notification(
+                db=db,
+                module="Construction Management",
+                action="Plan Uploaded",
+                message=f"New '{upload_plan_type.value}' plan uploaded for site '{site_code}'.",
+                type="create",
+                entity_id=site_code,
+                actor_name="System"
+            )
+        except Exception as e:
+            print("Error triggering plan uploaded notification:", e)
+
         return {"message": "Plan uploaded successfully"}
     except Exception as e:
         db.rollback()

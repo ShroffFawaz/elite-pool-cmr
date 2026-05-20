@@ -167,8 +167,9 @@ async def get_kpis(db: Session = Depends(get_db)):
 
     # ── Agent Performance (today) ─────────────
     agent_stats_today = (
-        db.query(AgentDailyStats.agent_name, AgentDailyStats.calls_today)
-        .filter(AgentDailyStats.call_date == today)
+        db.query(CallLog.agent_name, func.count(CallLog.id).label("calls_today"))
+        .filter(CallLog.call_date == today)
+        .group_by(CallLog.agent_name)
         .all()
     )
     agents = [

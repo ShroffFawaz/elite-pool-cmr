@@ -15,6 +15,7 @@ const PipelinePage = () => {
   const navigate = useNavigate();
   const [expandedCols, setExpandedCols] = useState({});
   const [loading, setLoading] = useState(false);
+  const [timeframe, setTimeframe] = useState('all');
 
   useEffect(() => {
     refreshLeads();
@@ -68,12 +69,44 @@ const PipelinePage = () => {
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text)' }}>Sales Pipeline</h1>
           <p style={{ fontSize: '13px', color: 'var(--text2)' }}>Drag-and-drop visual tracking (Coming Soon)</p>
         </div>
+        <div className="ph-right" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text2)' }}>Timeframe:</span>
+          <select 
+            className="fs" 
+            style={{ width: '150px', padding: '6px 12px', borderRadius: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: '13px' }} 
+            value={timeframe} 
+            onChange={(e) => setTimeframe(e.target.value)}
+          >
+            <option value="all">All Leads</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+          </select>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', overflowX: 'auto', minHeight: '600px', paddingBottom: '20px' }}>
+      <div className="pipeline-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', overflowX: 'auto', minHeight: '600px', paddingBottom: '20px' }}>
         {PCOLS.map(c => {
-          const cl = leads.filter(l => {
-            const associatedDesign = (designs || []).find(d => d.leadId === l.id || d.db_lead_id === l.db_id);
+          const cl = leads.filter(l => l.leadType === 'construction').filter(l => {
+            // Apply timeframe filtering
+            if (timeframe !== 'all') {
+              if (!l.date) return false;
+              const leadDate = new Date(l.date);
+              const now = new Date();
+              if (timeframe === 'today') {
+                if (leadDate.toDateString() !== now.toDateString()) return false;
+              } else if (timeframe === 'week') {
+                const diffTime = Math.abs(now - leadDate);
+                const diffDays = diffTime / (1000 * 60 * 60 * 24);
+                if (diffDays > 7) return false;
+              } else if (timeframe === 'month') {
+                const diffTime = Math.abs(now - leadDate);
+                const diffDays = diffTime / (1000 * 60 * 60 * 24);
+                if (diffDays > 30) return false;
+              }
+            }
+
+            const associatedDesign = (designs || []).find(d => d.leadId === l.id);
             const associatedQuote = (quotes || []).find(q => q.leadId === l.id);
             const associatedFollowup = (followups || []).find(f => String(f.leadId) === String(l.db_id) && f.leadType === l.leadType);
 
@@ -112,7 +145,7 @@ const PipelinePage = () => {
                 {cl.length > 0 ? (
                   <>
                     {(expandedCols[c.k] ? cl : cl.slice(0, 5)).map(l => {
-                      const associatedDesign = (designs || []).find(d => d.leadId === l.id || d.db_lead_id === l.db_id);
+                      const associatedDesign = (designs || []).find(d => d.leadId === l.id);
                       const associatedQuote = (quotes || []).find(q => q.leadId === l.id);
                       const associatedFollowup = (followups || []).find(f => String(f.leadId) === String(l.db_id) || String(f.leadId) === String(l.id));
 
@@ -120,7 +153,7 @@ const PipelinePage = () => {
                         <div 
                           key={l.id} 
                           className="pcard" 
-                          onClick={() => c.k === 'design' ? navigate('/design') : navigate(`/leads/${l.id}`)}
+                          onClick={() => navigate(`/leads/${l.id}`)}
                           style={{ 
                             background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: '10px', 
                             padding: '14px', cursor: 'pointer', transition: '0.2s', position: 'relative' 

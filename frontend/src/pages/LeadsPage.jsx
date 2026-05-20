@@ -79,7 +79,7 @@ const LeadsPage = ({ type }) => {
         </button>
       </div>
 
-      <LeadTable type={type} />
+      <LeadTable key={type} type={type} />
 
       {/* Import Modal */}
       <Modal open={importModal} onClose={() => setImportModal(false)} title={`📦 Bulk Import ${type === 'construction' ? 'Construction' : 'AMC'} Leads`}>

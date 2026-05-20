@@ -217,6 +217,22 @@ async def log_call(
             existing_call.recording_url = recording_url
         
         db.commit()
+        
+        # Trigger Call Log Updated Notification
+        try:
+            from notifications import trigger_notification
+            trigger_notification(
+                db=db,
+                module="Customer Support",
+                action="Call Updated",
+                message=f"Touchpoint #{call_number} updated for '{client_name}' by '{agent_name}'.",
+                type="update",
+                entity_id=str(schedule.id),
+                actor_name=agent_name
+            )
+        except Exception as e:
+            print("Error triggering call update notification:", e)
+
         return {"message": f"Call {call_number} updated successfully"}
 
     new_call = CallLog(
@@ -229,6 +245,21 @@ async def log_call(
     )
     db.add(new_call)
     db.commit()
+    
+    # Trigger Call Log Created Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="Customer Support",
+            action="Call Logged",
+            message=f"Touchpoint #{call_number} logged for '{client_name}' by '{agent_name}'.",
+            type="create",
+            entity_id=str(schedule.id),
+            actor_name=agent_name
+        )
+    except Exception as e:
+        print("Error triggering call logged notification:", e)
 
     return {"message": f"Call {call_number} logged successfully"}
 
@@ -240,6 +271,22 @@ async def remove_followup(client_name: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Follow-up not found")
     db.delete(schedule)
     db.commit()
+    
+    # Trigger Followup Removed Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="Customer Support",
+            action="Follow-up Removed",
+            message=f"Client '{client_name}' removed from the follow-up active ledger.",
+            type="delete",
+            entity_id=client_name,
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering followup removed notification:", e)
+
     return {"message": "Follow-up removed successfully"}
 
 @router.delete("/delete-call/{client_name}/{call_number}")

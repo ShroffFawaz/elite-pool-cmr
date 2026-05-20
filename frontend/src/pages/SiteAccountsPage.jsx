@@ -14,6 +14,7 @@ const SiteAccountsPage = ({ company }) => {
   } = useAppContext();
 
   const [search, setSearch] = useState('');
+  const [timeframe, setTimeframe] = useState('all'); // all, monthly, quarterly, yearly
   const [activeTab, setActiveTab] = useState('construction'); // for Elite Pool multi-tab
   const [detailModal, setDetailModal] = useState({ open: false, siteId: null });
   const [transModal, setTransModal] = useState({ open: false, type: 'payment', siteId: null, targetTab: 'construction' });
@@ -53,12 +54,53 @@ const SiteAccountsPage = ({ company }) => {
     return { totalIn, totalOut, balance: totalIn - totalOut };
   };
 
+  const isDateInTimeframe = (dateStr, tf) => {
+    if (!dateStr || tf === 'all') return true;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return true;
+    const now = new Date();
+    if (tf === 'monthly') {
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+    if (tf === 'quarterly') {
+      const qd = Math.floor(d.getMonth() / 3);
+      const qnow = Math.floor(now.getMonth() / 3);
+      return qd === qnow && d.getFullYear() === now.getFullYear();
+    }
+    if (tf === 'yearly') {
+      return d.getFullYear() === now.getFullYear();
+    }
+    return true;
+  };
+
   const getGlobalStats = (accounts) => {
     let totalIn = 0, totalOut = 0;
     accounts.forEach(s => {
-      const { totalIn: tin, totalOut: tout } = getRowTotals(s);
-      totalIn += tin;
-      totalOut += tout;
+      let siteIn = 0, siteOut = 0;
+      
+      if (company === 'm2a') {
+        const payments = s.m2a?.payments || [];
+        const expenditures = s.m2a?.expenditures || [];
+        
+        const filteredPayments = payments.filter(p => isDateInTimeframe(p.date, timeframe));
+        const filteredExpenditures = expenditures.filter(e => isDateInTimeframe(e.date, timeframe));
+        
+        siteIn = filteredPayments.length > 0 ? filteredPayments.reduce((sum, p) => sum + p.amount, 0) : (timeframe === 'all' ? (s.totalIn || 0) : 0);
+        siteOut = filteredExpenditures.length > 0 ? filteredExpenditures.reduce((sum, e) => sum + e.amount, 0) : (timeframe === 'all' ? (s.totalOut || 0) : 0);
+      } else {
+        const data = activeTab === 'construction' ? s.elitePool?.construction : s.elitePool?.amc;
+        const payments = data?.payments || [];
+        const expenditures = data?.expenditures || [];
+        
+        const filteredPayments = payments.filter(p => isDateInTimeframe(p.date, timeframe));
+        const filteredExpenditures = expenditures.filter(e => isDateInTimeframe(e.date, timeframe));
+        
+        siteIn = filteredPayments.length > 0 ? filteredPayments.reduce((sum, p) => sum + p.amount, 0) : (timeframe === 'all' ? (s.projectType === activeTab ? (s.totalIn || 0) : 0) : 0);
+        siteOut = filteredExpenditures.length > 0 ? filteredExpenditures.reduce((sum, e) => sum + e.amount, 0) : (timeframe === 'all' ? (s.projectType === activeTab ? (s.totalOut || 0) : 0) : 0);
+      }
+      
+      totalIn += siteIn;
+      totalOut += siteOut;
     });
     return { totalIn, totalOut, balance: totalIn - totalOut };
   };
@@ -219,10 +261,23 @@ const SiteAccountsPage = ({ company }) => {
           <div className="ph-title" style={{ fontSize: '24px', fontWeight: 800 }}>{company === 'm2a' ? 'M2A Ledger' : 'Elite Pool Accounts'}</div>
           <div className="ph-sub" style={{ fontSize: '13px', color: 'var(--text2)' }}>Financial project tracking and site expenditure management</div>
         </div>
-        <button className="btn btn-sky" onClick={() => { setClientSource('manual'); setAddClientModal(true); }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-          Add Client
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <select 
+            className="fs" 
+            style={{ width: '150px', margin: 0, height: '38px', padding: '0 12px', fontSize: '13px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)' }} 
+            value={timeframe} 
+            onChange={e => setTimeframe(e.target.value)}
+          >
+            <option value="all">All Time</option>
+            <option value="monthly">This Month</option>
+            <option value="quarterly">This Quarter</option>
+            <option value="yearly">This Year</option>
+          </select>
+          <button className="btn btn-sky" onClick={() => { setClientSource('manual'); setAddClientModal(true); }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+            Add Client
+          </button>
+        </div>
       </div>
 
       {/* Global Stats Cards */}

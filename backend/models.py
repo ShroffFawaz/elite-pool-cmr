@@ -64,6 +64,7 @@ class ConstructionLeadModel(Base):
                          default=LeadStatus.new)
     source      = Column(SAEnum(LeadSource, name="lead_source", create_type=False),
                          default=LeadSource.meta_ad)
+    priority    = Column(String(50),  nullable=True, default="Normal")
     created_at  = Column(DateTime, server_default=func.now())
 
 class AMCLeadModel(Base):
@@ -78,6 +79,7 @@ class AMCLeadModel(Base):
                          default=LeadStatus.new)
     source      = Column(SAEnum(LeadSource, name="lead_source", create_type=False),
                          default=LeadSource.meta_ad)
+    priority    = Column(String(50),  nullable=True, default="Normal")
     created_at  = Column(DateTime, server_default=func.now())
 
 class DesignStatus(str, enum.Enum):

@@ -41,6 +41,7 @@ async def view_all_leads(db: Session = Depends(get_db)):
             "requirement": lead.requirement,
             "status": lead.status,
             "source": lead.source,
+            "priority": lead.priority,
             "created_at": lead.created_at
         }
         for lead in all_leads

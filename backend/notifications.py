@@ -120,3 +120,38 @@ async def delete_notification(
     db.delete(db_notif)
     db.commit()
     return None
+
+
+def trigger_notification(
+    db: Session,
+    module: str,
+    action: str,
+    message: str,
+    type: str = "create",  # "create", "update", "delete", "system"
+    entity_id: str = None,
+    actor_name: str = "System",
+    user_id: int = None
+):
+    """Creates and persists a new CRUD notification in the database."""
+    if isinstance(type, str):
+        try:
+            type_enum = NotificationType(type)
+        except ValueError:
+            type_enum = NotificationType.system
+    else:
+        type_enum = type
+
+    new_notif = NotificationModel(
+        user_id=user_id,
+        type=type_enum,
+        module=module,
+        action=action,
+        message=message,
+        entity_id=entity_id,
+        actor_name=actor_name,
+        status=NotificationStatus.unread
+    )
+    db.add(new_notif)
+    db.commit()
+    return new_notif
+

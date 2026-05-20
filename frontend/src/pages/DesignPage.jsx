@@ -14,6 +14,7 @@ const DesignPage = () => {
   const [loading, setLoading] = useState(false);
   const [detailData, setDetailData] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [search, setSearch] = useState('');
 
   // ── Modal states ─────────────────────────────────────────────────────────
   const [newModal,     setNewModal]     = useState(false);
@@ -110,8 +111,8 @@ const DesignPage = () => {
       formData.append('assigned_designer', revDesigner);
       
       toast('Submitting revision...', 'info');
-      console.log("Submitting revision for client:", revModal.clientName);
-      await axios.patch(`http://127.0.0.1:8000/pool-design/revision/${revModal.clientName}`, formData);
+      console.log("Submitting revision for lead:", revModal.leadId);
+      await axios.patch(`http://127.0.0.1:8000/pool-design/revision/${revModal.leadId}`, formData);
       
       await refreshDesigns();
       toast('Revision submitted!', 'success');
@@ -163,9 +164,8 @@ const DesignPage = () => {
     });
   };
 
-  const filteredLeadOptions = ndLeadSearch
-    ? (leads || []).filter(l => l.name.toLowerCase().includes(ndLeadSearch.toLowerCase()) || l.id.toLowerCase().includes(ndLeadSearch.toLowerCase()))
-    : (leads || []);
+  const filteredLeadOptions = (leads || []).filter(l => l.leadType === 'construction')
+    .filter(l => !ndLeadSearch || l.name.toLowerCase().includes(ndLeadSearch.toLowerCase()) || l.id.toLowerCase().includes(ndLeadSearch.toLowerCase()));
 
   const openDetailModal = async (clientName) => {
     setDetailModal({ open: true, leadId: clientName });
@@ -201,7 +201,7 @@ const DesignPage = () => {
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="table-toolbar">
           <div className="table-toolbar-left">
-            <SearchBar value={ndLeadSearch} onChange={setNdLeadSearch} placeholder="Search designs..." />
+            <SearchBar value={search} onChange={setSearch} placeholder="Search designs..." />
           </div>
         </div>
         <div className="tw" style={{ border: 'none' }}>
@@ -212,38 +212,44 @@ const DesignPage = () => {
               </tr>
             </thead>
             <tbody>
-              {designs.length > 0 ? designs.map(d => (
-                <tr key={d.leadId}>
-                  <td className="mono" style={{ fontSize: '11px', color: 'var(--sky)' }}>{d.leadId}</td>
-                  <td>
-                    <div style={{ fontWeight: 600, color: 'var(--text)' }}>{d.client}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text3)', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.req}</div>
-                  </td>
-                  <td><span style={{ fontSize: '12px', background: 'var(--bg3)', padding: '2px 8px', borderRadius: '4px' }}>{d.style}</span></td>
-                  <td style={{ fontSize: '13px' }}>{d.designer}</td>
-                  <td><StatusBadge status={d.status === 'done' ? 'closed' : 'design'} /></td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => openDetailModal(d.client)}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                      </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => openRevision(d.leadId)}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                      </button>
-                      {d.status !== 'done' && (
-                        <button className="btn btn-sky btn-sm" onClick={() => confirmDone(d.leadId)}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              {(() => {
+                const filteredDesigns = designs.filter(d => d.leadType !== 'amc').filter(d => {
+                  const q = search.toLowerCase();
+                  return d.leadId.toLowerCase().includes(q) || d.client.toLowerCase().includes(q) || (d.style && d.style.toLowerCase().includes(q)) || (d.designer && d.designer.toLowerCase().includes(q));
+                });
+                return filteredDesigns.length > 0 ? filteredDesigns.map(d => (
+                  <tr key={d.leadId}>
+                    <td className="mono" style={{ fontSize: '11px', color: 'var(--sky)' }}>{d.leadId}</td>
+                    <td>
+                      <div style={{ fontWeight: 600, color: 'var(--text)' }}>{d.client}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text3)', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.req}</div>
+                    </td>
+                    <td><span style={{ fontSize: '12px', background: 'var(--bg3)', padding: '2px 8px', borderRadius: '4px' }}>{d.style}</span></td>
+                    <td style={{ fontSize: '13px' }}>{d.designer}</td>
+                    <td><StatusBadge status={d.status === 'done' ? 'closed' : 'design'} /></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => openDetailModal(d.leadId)}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                         </button>
-                      )}
-                      <button className="btn btn-ghost btn-sm" onClick={() => deleteDesign(d.id, d.client)} style={{ color: 'var(--red)' }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )) : (
-                <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--text3)', padding: '40px' }}>No design queue items</td></tr>
-              )}
+                        <button className="btn btn-ghost btn-sm" onClick={() => openRevision(d.leadId)}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                        </button>
+                        {d.status !== 'done' && (
+                          <button className="btn btn-sky btn-sm" onClick={() => confirmDone(d.leadId)}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          </button>
+                        )}
+                        <button className="btn btn-ghost btn-sm" onClick={() => deleteDesign(d.id, d.client)} style={{ color: 'var(--red)' }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--text3)', padding: '40px' }}>No design queue items</td></tr>
+                );
+              })()}
             </tbody>
           </table>
         </div>

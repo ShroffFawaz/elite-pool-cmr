@@ -51,8 +51,22 @@ async def add_amc_site(
     if existing:
         raise HTTPException(status_code=400, detail=f"AMC contract (Code: {existing.site_code}) already exists for this lead.")
 
-    count = db.query(func.count(AmcSiteModel.id)).scalar()
-    new_site_code = f"AMC-{str(count + 1).zfill(3)}"
+    last_entry = db.query(AmcSiteModel).order_by(AmcSiteModel.id.desc()).first()
+    next_num = 1
+    if last_entry and last_entry.site_code:
+        parts = last_entry.site_code.split("-")
+        if len(parts) == 2 and parts[0] == "AMC":
+            try:
+                next_num = int(parts[1]) + 1
+            except ValueError:
+                pass
+
+    while True:
+        new_site_code = f"AMC-{str(next_num).zfill(3)}"
+        exists = db.query(AmcSiteModel.id).filter(AmcSiteModel.site_code == new_site_code).first()
+        if not exists:
+            break
+        next_num += 1
 
     new_site = AmcSiteModel(
         site_code=new_site_code,
@@ -63,6 +77,22 @@ async def add_amc_site(
     db.add(new_site)
     db.commit()
     db.refresh(new_site)
+    
+    # Trigger AMC Site Created Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="AMC Management",
+            action="Site Initialized",
+            message=f"AMC site '{new_site_code}' initialized for lead '{name}'.",
+            type="create",
+            entity_id=new_site_code,
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering AMC site initialized notification:", e)
+
     return {"message": "AMC Site initialized", "site_code": new_site.site_code}
 
 
@@ -128,6 +158,22 @@ async def add_amc_visit(
                 db.add(photo_entry)
 
         db.commit()
+        
+        # Trigger AMC Visit Logged Notification
+        try:
+            from notifications import trigger_notification
+            trigger_notification(
+                db=db,
+                module="AMC Management",
+                action="Visit Logged",
+                message=f"AMC maintenance visit logged for site '{site_code}' on {visit_date}.",
+                type="create",
+                entity_id=site_code,
+                actor_name="System"
+            )
+        except Exception as e:
+            print("Error triggering AMC visit logged notification:", e)
+
         return {"message": "AMC visit log saved successfully"}
 
     except Exception as e:
@@ -200,6 +246,22 @@ async def delete_amc_site(site_code: str, db: Session = Depends(get_db)):
     if not site: raise HTTPException(status_code=404, detail="Site not found")
     db.delete(site)
     db.commit()
+    
+    # Trigger AMC Site Deleted Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="AMC Management",
+            action="Site Deleted",
+            message=f"AMC site '{site_code}' has been deleted.",
+            type="delete",
+            entity_id=site_code,
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering AMC site deleted notification:", e)
+
     return {"message": "AMC site deleted successfully"}
 
 @router.delete("/delete-visit/{visit_id}")
@@ -217,4 +279,20 @@ async def delete_amc_visit(visit_id: int, db: Session = Depends(get_db)):
             
     db.delete(visit)
     db.commit()
+    
+    # Trigger AMC Visit Deleted Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="AMC Management",
+            action="Visit Deleted",
+            message=f"AMC visit log ID {visit_id} has been deleted.",
+            type="delete",
+            entity_id=str(visit_id),
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering AMC visit deleted notification:", e)
+
     return {"message": "AMC visit log deleted successfully"}

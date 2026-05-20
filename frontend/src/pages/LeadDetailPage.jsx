@@ -72,22 +72,22 @@ const LeadDetailPage = () => {
 
 
   return (
-    <div className="page" id="page_lead_detail">
-      <div className="ph" style={{ marginBottom: '24px' }}>
-        <div className="ph-left">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-            <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>← Back</button>
-            <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text)' }}>Lead Details</h1>
+    <div className="page" id="page_lead_detail" style={{ display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: '800px' }}>
+        <div className="ph" style={{ marginBottom: '24px', padding: 0 }}>
+          <div className="ph-left">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>← Back</button>
+              <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text)' }}>Lead Details</h1>
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--text2)' }}>Detailed overview for {l.name} ({l.id})</p>
           </div>
-          <p style={{ fontSize: '13px', color: 'var(--text2)' }}>Detailed overview for {l.name} ({l.id})</p>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button className="btn btn-sky" onClick={() => navigate(`/leads/edit/${l.id}`)}>Edit Profile</button>
+            <button className="btn" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }} onClick={deleteLead}>Delete Lead</button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn btn-sky" onClick={() => navigate(`/leads/edit/${l.id}`)}>Edit Profile</button>
-          <button className="btn" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }} onClick={deleteLead}>Delete Lead</button>
-        </div>
-      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Main Info */}
           <div className="card" style={{ padding: '32px' }}>
@@ -137,50 +137,6 @@ const LeadDetailPage = () => {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Actions */}
-            <div className="card">
-              <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '16px' }}>Quick Actions</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <button className="btn btn-sky" style={{ width: '100%' }} onClick={fwdDesign}>Forward to Design</button>
-                <button className="btn btn-ghost" style={{ width: '100%' }}>Download Lead Brief</button>
-              </div>
-            </div>
-
-            {/* Status Update */}
-            <div className="card">
-              <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '16px' }}>Pipeline Status</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {['new', 'design', 'quoted', 'followup', 'closed'].map(s => (
-                  <button
-                    key={s}
-                    onClick={() => chStatus(s)}
-                    style={{
-                      padding: '10px', borderRadius: '8px', border: '1px solid',
-                      borderColor: selectedStatus === s ? 'var(--sky)' : 'var(--border)',
-                      background: selectedStatus === s ? 'rgba(56,189,248,0.1)' : 'transparent',
-                      color: selectedStatus === s ? 'var(--sky)' : 'var(--text2)',
-                      textAlign: 'left', cursor: 'pointer', transition: '0.2s',
-                      textTransform: 'capitalize', fontSize: '13px', fontWeight: 600
-                    }}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-              {selectedStatus !== l.status && (
-                <button
-                  className="btn btn-sky"
-                  style={{ width: '100%', marginTop: '16px' }}
-                  onClick={saveStatus}
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : 'Save Status Change'}
-                </button>
-              )}
           </div>
         </div>
       </div>

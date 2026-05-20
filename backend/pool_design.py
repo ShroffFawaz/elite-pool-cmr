@@ -85,6 +85,21 @@ async def new_design(
             db.rollback() # Rollback design creation if file save fails to keep DB clean
             raise HTTPException(status_code=500, detail=f"File processing failed: {str(e)}")
 
+    # Trigger Design Created Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="Design Management",
+            action="Design Created",
+            message=f"New design assigned to '{assigned_designer}' for client '{lead.name}'.",
+            type="create",
+            entity_id=str(design.id),
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering design created notification:", e)
+
     return {
         "message": "Design plan created successfully",
         "design": {
@@ -116,6 +131,7 @@ async def get_all_designs(db: Session = Depends(get_db)):
         result.append({
             "id": d.id,
             "lead_id": d.lead_id,
+            "lead_type": d.lead_type,
             "lead_code": lead.lead_code if lead else None,
             "client_name": lead.name if lead else "Unknown",
             "requirement": lead.requirement if lead else "",
@@ -137,6 +153,22 @@ async def mark_done(design_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Design not found")
     design.status = "completed"
     db.commit()
+    
+    # Trigger Design Completed Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="Design Management",
+            action="Design Completed",
+            message=f"Design for client '{design_id}' has been marked as Completed.",
+            type="update",
+            entity_id=str(design.id),
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering design completed notification:", e)
+
     return {"message": "Design marked as complete"}
 
 
@@ -219,6 +251,21 @@ async def revision(
             # Design was saved, but file upload failed — don't lose the design
             raise HTTPException(status_code=500, detail=f"Design saved but file upload failed: {str(e)}")
 
+    # Trigger Design Revision Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="Design Management",
+            action="Design Revision",
+            message=f"New revision submitted for client '{lead.name}'.",
+            type="update",
+            entity_id=str(design.id),
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering design revision notification:", e)
+
     return {
         "message": "Revision submitted successfully",
         "design": {
@@ -272,6 +319,11 @@ async def get_details(client_name: str, db: Session = Depends(get_db)):
         "created_at": str(design.created_at),
         "files": [{"id": f.id, "file_url": f.file_url, "file_name": f.file_name, "version": f.version} for f in files],
     }
+
+
+@router.get("/file/{file_id}/design_plan.pdf")
+async def view_file_pdf(file_id: int, db: Session = Depends(get_db)):
+    return await view_file(file_id, db)
 
 
 @router.get("/file/{file_id}/view")
@@ -363,4 +415,20 @@ async def delete_design(design_id: int, db: Session = Depends(get_db)):
 
     db.delete(design)
     db.commit()
+    
+    # Trigger Design Deleted Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="Design Management",
+            action="Design Deleted",
+            message=f"Design plan for ID {design_id} has been deleted.",
+            type="delete",
+            entity_id=str(design_id),
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering design deleted notification:", e)
+
     return {"message": "Design and files deleted successfully"}

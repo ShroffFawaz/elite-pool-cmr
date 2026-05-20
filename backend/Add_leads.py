@@ -6,6 +6,7 @@ import random
 
 from database import get_db
 from models import ConstructionLeadModel, AMCLeadModel, LeadStatus, LeadSource
+from notifications import trigger_notification
 
 router = APIRouter(prefix="/add-leads", tags=["add_leads"])
 
@@ -49,7 +50,8 @@ async def create_lead(lead_data: LeadCreate, db: Session = Depends(get_db)):
             location=lead_data.loc,
             requirement=combined_req,
             status=LeadStatus.new,
-            source=mapped_source
+            source=mapped_source,
+            priority=lead_data.pri
         )
     elif lead_data.lt == "amc":
         new_lead = AMCLeadModel(
@@ -59,7 +61,8 @@ async def create_lead(lead_data: LeadCreate, db: Session = Depends(get_db)):
             location=lead_data.loc,
             requirement=combined_req,
             status=LeadStatus.new,
-            source=mapped_source
+            source=mapped_source,
+            priority=lead_data.pri
         )
     else:
         raise HTTPException(status_code=400, detail="Invalid lead type")
@@ -67,6 +70,20 @@ async def create_lead(lead_data: LeadCreate, db: Session = Depends(get_db)):
     db.add(new_lead)
     db.commit()
     db.refresh(new_lead)
+    
+    # Trigger Lead Creation Notification
+    try:
+        trigger_notification(
+            db=db,
+            module="Lead Management",
+            action="Lead Created",
+            message=f"New {lead_data.lt.capitalize()} Lead '{new_lead.name}' has been added.",
+            type="create",
+            entity_id=new_lead.lead_code,
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering lead creation notification:", e)
     
     return {
         "message": f"Lead added successfully to {lead_data.lt}",

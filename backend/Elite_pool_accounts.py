@@ -168,7 +168,28 @@ async def adding_leads_from_amc(
 
 @router.get("/all_ep_accounts")
 async def get_all_ep_accounts(db: Session = Depends(get_db)):
-    result = db.execute(text("SELECT * FROM ep_accounts_summary")).mappings().all()
+    accounts = db.query(ElitePoolAccounts).all()
+    result = []
+    for acc in accounts:
+        payments = db.query(ElitePoolPayments).filter(ElitePoolPayments.account_id == acc.id).all()
+        expenses = db.query(ElitePoolExpenses).filter(ElitePoolExpenses.account_id == acc.id).all()
+        
+        total_payment = sum(p.amount for p in payments)
+        total_expense = sum(e.amount for e in expenses)
+        
+        result.append({
+            "id": acc.id,
+            "site_name": acc.site_name,
+            "location": acc.location,
+            "project_type": acc.project_type,
+            "note": acc.note,
+            "last_update": str(acc.last_update),
+            "created_at": str(acc.created_at),
+            "received": float(total_payment),
+            "spent": float(total_expense),
+            "payments": [{"amount": float(p.amount), "payment_date": str(p.payment_date)} for p in payments],
+            "expenses": [{"amount": float(e.amount), "payment_date": str(e.payment_date), "description": e.description, "expenses_type": e.expenses_type} for e in expenses]
+        })
     return result
 
 @router.get("/account_details/{identifier}")

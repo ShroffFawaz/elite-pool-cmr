@@ -48,7 +48,7 @@ const DashboardPage = () => {
     : agents;
 
   const StatCard = ({ title, value, delta, color, icon }) => (
-    <div className="card stat" style={{ borderBottom: `2px solid var(--${color})`, position: 'relative' }}>
+    <div className="card stat" style={{ borderBottom: `2px solid var(--${color})`, position: 'relative', minWidth: '240px', flex: 1 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px' }}>{title}</div>
@@ -61,7 +61,7 @@ const DashboardPage = () => {
   );
 
   return (
-    <div className="page" id="page_dashboard">
+    <div className="page" id="page_dashboard" style={{ height: 'auto', minHeight: '100%', overflowY: 'visible', overflowX: 'hidden', width: '100%' }}>
       <div className="ph" style={{ marginBottom: '24px' }}>
         <div className="ph-left">
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text)' }}>Executive Overview</h1>
@@ -75,7 +75,7 @@ const DashboardPage = () => {
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch', gap: '20px', marginBottom: '24px', paddingBottom: '8px' }}>
         <StatCard 
           title="Total Leads" 
           value={totalLeads} 
@@ -106,14 +106,14 @@ const DashboardPage = () => {
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '24px', marginBottom: '24px' }}>
+      <div className="dash-main-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '24px', marginBottom: '24px' }}>
         {/* Recent Leads */}
         <div className="card" style={{ padding: 0 }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '14px', fontWeight: 700 }}>Recent Leads</span>
             <button className="btn btn-ghost btn-sm" onClick={() => navigate('/leads-construction')}>View All</button>
           </div>
-          <div className="tw" style={{ border: 'none' }}>
+          <div className="tw" style={{ border: 'none', overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
             <table>
               <thead>
                 <tr>
@@ -186,7 +186,7 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <div className="dash-bottom-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         {/* Agent Performance */}
         <div className="card">
           <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '16px' }}>Agent Performance</div>

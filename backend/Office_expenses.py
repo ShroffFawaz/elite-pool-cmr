@@ -65,6 +65,22 @@ async def add_office_expense(
         )
         db.add(new_expense)
         db.commit()
+        
+        # Trigger Expense Added Notification
+        try:
+            from notifications import trigger_notification
+            trigger_notification(
+                db=db,
+                module="Office Expenses",
+                action="Expense Logged",
+                message=f"Logged expense of {amount} under '{category.value}' paid to '{payee_name}'.",
+                type="create",
+                entity_id=payee_name,
+                actor_name="System"
+            )
+        except Exception as e:
+            print("Error triggering expense logged notification:", e)
+
         return {"message": "Expense added successfully"}
     except Exception as e:
         db.rollback()
@@ -91,6 +107,22 @@ async def delete_expense(
         
         db.delete(expense)
         db.commit()
+        
+        # Trigger Expense Deleted Notification
+        try:
+            from notifications import trigger_notification
+            trigger_notification(
+                db=db,
+                module="Office Expenses",
+                action="Expense Deleted",
+                message=f"Expense of {expense.amount} for '{payee_name}' under '{category.value}' deleted.",
+                type="delete",
+                entity_id=payee_name,
+                actor_name="System"
+            )
+        except Exception as e:
+            print("Error triggering expense deleted notification:", e)
+
         return {"message": f"Expense for {payee_name} in {category} deleted successfully"}
     except Exception as e:
         db.rollback()

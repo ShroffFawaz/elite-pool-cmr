@@ -73,7 +73,6 @@ const CallTrackerPage = () => {
                 <th>Daily Target</th>
                 <th>Calls Logged</th>
                 <th>Progress</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -99,18 +98,6 @@ const CallTrackerPage = () => {
                           <div style={{ height: '100%', width: `${pct}%`, background: pct >= 100 ? 'var(--green)' : 'var(--sky)', transition: '0.5s' }}></div>
                         </div>
                         <span style={{ fontSize: '12px', fontWeight: 700, minWidth: '35px' }}>{Math.round(pct)}%</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                        <button className="btn btn-ghost btn-sm" onClick={() => removeCall(a.id)}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10h10a5 5 0 0 1 5 5v2"/><path d="m6 7-3 3 3 3"/></svg>
-                          Undo
-                        </button>
-                        <button className="btn btn-sky btn-sm" onClick={() => addCall(a.id)}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                          Log Call
-                        </button>
                       </div>
                     </td>
                   </tr>

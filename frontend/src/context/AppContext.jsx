@@ -114,6 +114,7 @@ export const AppProvider = ({ children }) => {
         id: d.id,
         leadId: d.lead_code,
         db_lead_id: d.lead_id,
+        leadType: d.lead_type,
         client: d.client_name,
         req: d.requirement,
         designer: d.assigned_designer,
@@ -334,6 +335,15 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const refreshAmcSites = async () => {
+    try {
+      const res = await axios.get('/amc/all-sites');
+      setAmcSites(res.data);
+    } catch (error) {
+      console.error("Error fetching AMC sites:", error);
+    }
+  };
+
   const refreshSiteAccounts = async () => {
     try {
       const [epRes, m2aRes] = await Promise.all([
@@ -350,6 +360,9 @@ export const AppProvider = ({ children }) => {
         const pType = (acc.project_type || acc.project || '').toLowerCase();
         const type = pType.includes('amc') ? 'amc' : 'construction';
         
+        const backendPayments = (acc.payments || []).map(p => ({ amount: parseFloat(p.amount), date: p.payment_date }));
+        const backendExpenses = (acc.expenses || []).map(e => ({ amount: parseFloat(e.amount), date: e.payment_date || e.expense_date, description: e.description, category: e.expenses_type || e.expense_type }));
+
         accounts.push({
           id: acc.id,
           siteName: acc.site_name,
@@ -359,8 +372,8 @@ export const AppProvider = ({ children }) => {
           isM2A: false,
           lastUpdated: acc.last_update,
           elitePool: {
-            construction: { payments: [], expenditures: [] },
-            amc: { payments: [], expenditures: [] }
+            construction: type === 'construction' ? { payments: backendPayments, expenditures: backendExpenses } : { payments: [], expenditures: [] },
+            amc: type === 'amc' ? { payments: backendPayments, expenditures: backendExpenses } : { payments: [], expenditures: [] }
           },
           m2a: { payments: [], expenditures: [] },
           totalIn: parseFloat(acc.received || acc.total_received || acc.total_recieved || acc.total_payment || 0),
@@ -369,6 +382,9 @@ export const AppProvider = ({ children }) => {
       });
 
       m2aData.forEach(acc => {
+        const backendPayments = (acc.payments || []).map(p => ({ amount: parseFloat(p.amount), date: p.payment_date }));
+        const backendExpenses = (acc.expenses || []).map(e => ({ amount: parseFloat(e.amount), date: e.expense_date || e.payment_date, description: e.description, category: e.expense_type }));
+
         accounts.push({
           id: acc.id,
           siteName: acc.site_name,
@@ -380,7 +396,10 @@ export const AppProvider = ({ children }) => {
             construction: { payments: [], expenditures: [] },
             amc: { payments: [], expenditures: [] }
           },
-          m2a: { payments: [], expenditures: [] },
+          m2a: {
+            payments: backendPayments,
+            expenditures: backendExpenses
+          },
           totalIn: parseFloat(acc.total_recieved || acc.received || 0),
           totalOut: parseFloat(acc.total_expense || acc.spent || 0)
         });
@@ -429,12 +448,36 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const refreshNotifications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      const res = await axios.get('/notifications/');
+      const mapped = res.data.map(n => ({
+        id: n.id,
+        type: n.type,
+        module: n.module,
+        action: n.action,
+        message: n.message,
+        entityId: n.entity_id,
+        actor: n.actor_name || 'System',
+        status: n.status,
+        createdAt: n.created_at,
+      }));
+      setNotifications(mapped);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  };
+
   useEffect(() => {
     const init = async () => {
       const tasks = [
         refreshLeads, refreshDesigns, refreshQuotes, refreshAttendance,
         refreshOfficeExpenses, refreshSiteAccounts, refreshFollowups,
-        refreshConstructionSites, refreshReviews, refreshCallTrack, refreshUsers
+        refreshConstructionSites, refreshAmcSites, refreshReviews, refreshCallTrack, refreshUsers,
+        refreshNotifications
       ];
       for (const task of tasks) {
         try { await task(); } catch (e) { console.error(`Failed task:`, e); }
@@ -442,6 +485,14 @@ export const AppProvider = ({ children }) => {
     };
     init();
   }, []);
+
+  // Poll for notifications when user is active
+  useEffect(() => {
+    if (!user) return;
+    refreshNotifications();
+    const interval = setInterval(refreshNotifications, 10000); // 10 seconds polling
+    return () => clearInterval(interval);
+  }, [user]);
 
   const employees = (users || []).map(u => ({
     id: u.id,
@@ -469,28 +520,72 @@ export const AppProvider = ({ children }) => {
     'Lead Management': ['leads'], 'Pipeline': ['pipeline'], 'Design': ['design'], 'Quotation': ['quotation'], 'Send to Client': ['send'], 'Follow-up': ['followup'], 'Call Tracker': ['calltracker'], 'Reviews': ['feedback'], 'Construction': ['construction'], 'AMC': ['amc'], 'Procurement': ['procurements'], 'M2A Accounts': ['m2aaccounts'], 'EP Accounts': ['elitepoolaccounts'], 'Office Expenses': ['officeexpenses'], 'Users': ['users'], 'Attendance': ['attendance'], 'General': ['dashboard']
   };
 
-  const addNotification = ({ type, module, action, message, entityId, actor }) => {
-    const requiredPerms = MODULE_PERMISSIONS[module] || ['dashboard'];
-    const targetRoles = Object.keys(PERMS).filter(role => requiredPerms.some(p => PERMS[role].includes(p)));
-    const newNotif = {
-      id: `NOTIF-${Date.now()}`,
-      type: type || 'create',
-      module: module || 'General',
-      action: action || 'Action',
-      message: message || 'New activity recorded',
-      entityId: entityId || null,
-      actor: actor || (user?.name || 'System'),
-      status: 'unread',
-      createdAt: new Date().toISOString(),
-      targetRoles
-    };
-    setNotifications(prev => [newNotif, ...prev]);
+  const addNotification = async ({ type, module, action, message, entityId, actor }) => {
+    try {
+      const res = await axios.post('/notifications/', {
+        type: type || 'create',
+        module: module || 'General',
+        action: action || 'Action',
+        message: message || 'New activity recorded',
+        entity_id: entityId ? String(entityId) : null,
+        actor_name: actor || null
+      });
+      const n = res.data;
+      const newNotif = {
+        id: n.id,
+        type: n.type,
+        module: n.module,
+        action: n.action,
+        message: n.message,
+        entityId: n.entity_id,
+        actor: n.actor_name || 'System',
+        status: n.status,
+        createdAt: n.created_at,
+      };
+      setNotifications(prev => [newNotif, ...prev]);
+    } catch (error) {
+      console.error("Error adding notification:", error);
+    }
   };
 
-  const markAsViewed = (id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: n.status === 'unread' ? 'viewed' : n.status } : n));
-  const markAsDone = (id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: 'done' } : n));
-  const clearNotification = (id) => setNotifications(prev => prev.filter(n => n.id !== id));
-  const clearAllNotifications = () => setNotifications([]);
+  const markAsViewed = async (id) => {
+    try {
+      const notif = notifications.find(n => n.id === id);
+      if (notif && notif.status === 'unread') {
+        await axios.patch(`/notifications/${id}`, { status: 'viewed' });
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: 'viewed' } : n));
+      }
+    } catch (error) {
+      console.error("Error marking notification as viewed:", error);
+    }
+  };
+
+  const markAsDone = async (id) => {
+    try {
+      await axios.patch(`/notifications/${id}`, { status: 'done' });
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: 'done' } : n));
+    } catch (error) {
+      console.error("Error marking notification as done:", error);
+    }
+  };
+
+  const clearNotification = async (id) => {
+    try {
+      await axios.delete(`/notifications/${id}`);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+    }
+  };
+
+  const clearAllNotifications = async () => {
+    try {
+      await Promise.all(notifications.map(n => axios.delete(`/notifications/${n.id}`)));
+      setNotifications([]);
+    } catch (error) {
+      console.error("Error clearing all notifications:", error);
+    }
+  };
 
   const addProcurement = (siteId, siteName, client, siteType, requirements, logDate) => {
     const now = new Date();
@@ -519,8 +614,9 @@ export const AppProvider = ({ children }) => {
     officeExpenses, setOfficeExpenses, refreshOfficeExpenses, users, setUsers, refreshUsers, employees, attendanceRecords, setAttendanceRecords, attendanceKpis, refreshAttendance,
     toasts, toast, notifications, setNotifications, addNotification, markAsViewed, markAsDone,
     clearNotification, clearAllNotifications, addProcurement, refreshLeads, refreshDesigns, refreshQuotes, checkAccess, isSidebarOpen, setIsSidebarOpen,
+    refreshNotifications,
     refreshFollowups, refreshReviews, reviews, setReviews,
-    followupKPI, refreshCallTrack, refreshConstructionSites,
+    followupKPI, refreshCallTrack, refreshConstructionSites, refreshAmcSites,
     constructionSites, setConstructionSites, followups, setFollowups
   };
 

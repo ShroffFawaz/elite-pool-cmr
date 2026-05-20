@@ -83,10 +83,10 @@ const Header = () => {
           </button>
 
           {showNotif && (
-            <div style={{ position: 'absolute', top: '50px', right: '0', width: '360px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', zIndex: 1000, animation: 'fadeIn 0.2s ease', overflow: 'hidden' }}>
+            <div className="notif-dropdown" style={{ position: 'absolute', top: '50px', right: '0', width: 'min(360px, calc(100vw - 24px))', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', zIndex: 1000, animation: 'fadeIn 0.2s ease', overflow: 'hidden' }}>
               <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg3)' }}>
                 <span style={{ fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', color: 'var(--text2)' }}>Activity Center</span>
-                <button onClick={clearAllNotifications} style={{ fontSize: '11px', color: 'var(--red)', background: 'none', border: 'none', fontWeight: 700, cursor: 'pointer' }}>Clear All</button>
+                <button onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); clearAllNotifications(); }} style={{ fontSize: '11px', color: 'var(--red)', background: 'none', border: 'none', fontWeight: 700, cursor: 'pointer' }}>Clear All</button>
               </div>
               <div style={{ maxHeight: '450px', overflowY: 'auto' }}>
                 {notifications.length > 0 ? notifications.map(n => (
@@ -126,14 +126,14 @@ const Header = () => {
                         <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                           {n.status !== 'done' && (
                             <button 
-                              onClick={(e) => { e.stopPropagation(); markAsDone(n.id); }}
+                              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); markAsDone(n.id); }}
                               style={{ background: 'none', border: 'none', color: 'var(--green)', fontSize: '11px', fontWeight: 700, padding: 0, cursor: 'pointer' }}
                             >
                               Mark Done
                             </button>
                           )}
                           <button 
-                            onClick={(e) => { e.stopPropagation(); clearNotification(n.id); }}
+                            onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); clearNotification(n.id); }}
                             style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: '11px', fontWeight: 700, padding: 0, cursor: 'pointer' }}
                           >
                             Dismiss
@@ -163,7 +163,7 @@ const Header = () => {
           }}
         >
           <Icons.LogOut />
-          <span>Sign Out</span>
+          <span className="mobile-hide">Sign Out</span>
         </button>
 
         <ThemeToggle theme={theme} toggleTheme={toggleTheme} />

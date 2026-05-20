@@ -50,6 +50,21 @@ async def new_quotation(
     db.commit()
     db.refresh(new_q)
 
+    # Trigger Quotation Created Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="Quotation Management",
+            action="Quotation Created",
+            message=f"New quotation of pool size {pool_lenght}x{pool_width} created for client '{lead_id}'.",
+            type="create",
+            entity_id=str(new_q.id),
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering quotation created notification:", e)
+
     return {
         "message": "Quotation added successfully",
         "quotation": {
@@ -89,6 +104,11 @@ async def all_quotation(db: Session = Depends(get_db)):
         import traceback
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/file/{quotation_id}/quotation.pdf")
+async def view_quotation_pdf(quotation_id: int, db: Session = Depends(get_db)):
+    return await view_quotation(quotation_id, db)
 
 
 @router.get("/file/{quotation_id}/view")
@@ -151,6 +171,22 @@ async def delete_quotation(lead_code: str, db: Session = Depends(get_db)):
 
     db.delete(quotation)
     db.commit()
+    
+    # Trigger Quotation Deleted Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="Quotation Management",
+            action="Quotation Deleted",
+            message=f"Quotation for lead '{lead_code}' has been deleted.",
+            type="delete",
+            entity_id=lead_code,
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering quotation deleted notification:", e)
+
     return {"message": "Quotation deleted successfully"}
 
 
@@ -161,4 +197,20 @@ async def mark_quotation_sent(quotation_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Quotation not found")
     q.status = QuotationStatus.sent
     db.commit()
+    
+    # Trigger Quotation Sent Notification
+    try:
+        from notifications import trigger_notification
+        trigger_notification(
+            db=db,
+            module="Quotation Management",
+            action="Quotation Sent",
+            message=f"Quotation for client '{q.lead_id}' has been marked as Sent.",
+            type="update",
+            entity_id=str(q.id),
+            actor_name="System"
+        )
+    except Exception as e:
+        print("Error triggering quotation sent notification:", e)
+
     return {"message": "Quotation status updated to sent"}

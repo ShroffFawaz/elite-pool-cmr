@@ -11,6 +11,7 @@ const AMCPage = () => {
 
   const [localSites, setLocalSites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   const [addSiteModal, setAddSiteModal] = useState(false);
   const [logModal, setLogModal] = useState({ open: false, siteId: null });
@@ -57,6 +58,9 @@ const AMCPage = () => {
     const site = getSite(logModal.siteId);
     if (!logReport) { toast('Service report is required', 'error'); return; }
     
+    // Close the modal immediately so the user sees the card close instantly
+    setLogModal({ open: false, siteId: null });
+
     try {
       const formData = new FormData();
       formData.append('site_code', site.site_code);
@@ -72,11 +76,11 @@ const AMCPage = () => {
       toast('✅ AMC visit log saved!', 'success');
       fetchSites();
       refreshAmcSites();
-      setLogModal({ open: false });
       resetLogForm();
     } catch (error) {
       console.error("Error saving log:", error);
       toast('❌ Failed to save log', 'error');
+      resetLogForm();
     }
   };
 
@@ -175,7 +179,7 @@ const AMCPage = () => {
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="table-toolbar">
           <div className="table-toolbar-left">
-             <SearchBar placeholder="Search AMC sites..." />
+             <SearchBar value={search} onChange={setSearch} placeholder="Search AMC sites..." />
           </div>
         </div>
         <div className="tw" style={{ border: 'none' }}>
@@ -184,39 +188,45 @@ const AMCPage = () => {
               <tr><th>Site ID</th><th>Client</th><th>Location</th><th>Contract Start</th><th>Status</th><th style={{ textAlign: 'right' }}>Actions</th></tr>
             </thead>
             <tbody>
-              {localSites.length > 0 ? localSites.map(s => (
-                <tr key={s.id}>
-                  <td style={{ fontSize: '12px', color: 'var(--sky)', fontWeight: 600 }}>{s.site_code}</td>
-                  <td>
-                    <div style={{ fontWeight: 700 }}>{s.client}</div>
-                    <div className="mono" style={{ fontSize: '10px', color: 'var(--text3)' }}>LEAD: {s.leadId}</div>
-                  </td>
-                  <td style={{ fontSize: '13px' }}>{s.location}</td>
-                  <td style={{ fontSize: '13px' }}>{s.startDate}</td>
-                  <td><StatusBadge status={s.status === 'active' ? 'new' : 'closed'} /></td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                      <button className="btn btn-ghost btn-sm" onClick={async () => {
-                        const res = await axios.get(`/amc/view-amc-visits/${s.site_code}`);
-                        setLocalSites(prev => prev.map(ps => ps.id === s.id ? { ...ps, entries: res.data } : ps));
-                        setViewLogsModal({ open: true, siteId: s.id });
-                      }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                        View Logs
-                      </button>
-                      <button className="btn btn-sky btn-sm" onClick={() => setLogModal({ open: true, siteId: s.id })}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        Log Visit
-                      </button>
-                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => deleteSite(s.site_code)}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )) : (
-                <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--text3)', padding: '40px' }}>No AMC sites listed</td></tr>
-              )}
+              {(() => {
+                const filteredSites = localSites.filter(s => {
+                  const q = search.toLowerCase();
+                  return s.site_code.toLowerCase().includes(q) || s.client.toLowerCase().includes(q) || (s.location && s.location.toLowerCase().includes(q)) || (s.status && s.status.toLowerCase().includes(q));
+                });
+                return filteredSites.length > 0 ? filteredSites.map(s => (
+                  <tr key={s.id}>
+                    <td style={{ fontSize: '12px', color: 'var(--sky)', fontWeight: 600 }}>{s.site_code}</td>
+                    <td>
+                      <div style={{ fontWeight: 700 }}>{s.client}</div>
+                      <div className="mono" style={{ fontSize: '10px', color: 'var(--text3)' }}>LEAD: {s.leadId}</div>
+                    </td>
+                    <td style={{ fontSize: '13px' }}>{s.location}</td>
+                    <td style={{ fontSize: '13px' }}>{s.startDate}</td>
+                    <td><StatusBadge status={s.status === 'active' ? 'new' : 'closed'} /></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                        <button className="btn btn-ghost btn-sm" onClick={async () => {
+                          const res = await axios.get(`/amc/view-amc-visits/${s.site_code}`);
+                          setLocalSites(prev => prev.map(ps => ps.id === s.id ? { ...ps, entries: res.data } : ps));
+                          setViewLogsModal({ open: true, siteId: s.id });
+                        }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                          View Logs
+                        </button>
+                        <button className="btn btn-sky btn-sm" onClick={() => setLogModal({ open: true, siteId: s.id })}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                          Log Visit
+                        </button>
+                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => deleteSite(s.site_code)}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--text3)', padding: '40px' }}>No AMC sites listed</td></tr>
+                );
+              })()}
             </tbody>
           </table>
         </div>

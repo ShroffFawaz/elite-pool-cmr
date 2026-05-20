@@ -18,7 +18,9 @@ const SendToClientPage = () => {
   const selectedLead  = leads.find(l => l.id === selectedLeadId);
   const leadQuote     = quotes.find(q => q.leadId === selectedLeadId);
   const leadDesign    = designs.find(d => d.leadId === selectedLeadId);
-  const canSend       = !!(leadQuote || leadDesign);
+  const isQuotePending = !leadQuote || leadQuote.status === 'pending';
+  const isDesignPending = !leadDesign || leadDesign.status === 'progress';
+  const canSend       = !(isQuotePending && isDesignPending);
 
   const handleSend = (via) => {
     if (!selectedLead) return;
@@ -45,8 +47,8 @@ const SendToClientPage = () => {
     // Handle WhatsApp redirection
     const cleanPhone = selectedLead.phone.replace(/\D/g, '');
     let docLinks = '';
-    if (leadQuote) docLinks += `\nQuotation: http://127.0.0.1:8000/quotation/file/${leadQuote.db_id}/view`;
-    if (leadDesign && leadDesign.uploadedFile) docLinks += `\nDesign Plan: http://127.0.0.1:8000/pool-design/file/${leadDesign.uploadedFile.id}/view`;
+    if (leadQuote) docLinks += `\nQuotation: http://lvh.me:8000/quotation/file/${leadQuote.db_id}/quotation.pdf`;
+    if (leadDesign && leadDesign.uploadedFile) docLinks += `\nDesign Plan: http://lvh.me:8000/pool-design/file/${leadDesign.uploadedFile.id}/design_plan.pdf`;
 
     const message = encodeURIComponent(`Hello ${selectedLead.name}, this is from Elite Pool Builders. Please find your project documents below:${docLinks}`);
     const waUrl = `https://wa.me/${cleanPhone}?text=${message}`;
@@ -147,12 +149,19 @@ const SendToClientPage = () => {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', fontSize: '14px' }}>
                     <span style={{ color: 'var(--text3)' }}>Quotation Status</span>
-                    <span style={{ color: leadQuote ? 'var(--green)' : 'var(--red)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: leadQuote && leadQuote.status !== 'pending' ? 'var(--green)' : 'var(--red)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {leadQuote ? (
-                        <>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                          {leadQuote.id}
-                        </>
+                        leadQuote.status === 'pending' ? (
+                          <>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            Pending
+                          </>
+                        ) : (
+                          <>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {leadQuote.id}
+                          </>
+                        )
                       ) : (
                         <>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -163,16 +172,23 @@ const SendToClientPage = () => {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', fontSize: '14px' }}>
                     <span style={{ color: 'var(--text3)' }}>Design Plan</span>
-                    <span style={{ color: leadDesign ? 'var(--green)' : 'var(--red)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: leadDesign && leadDesign.status === 'done' ? 'var(--green)' : 'var(--red)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {leadDesign ? (
-                        <>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                          Ready
-                        </>
+                        leadDesign.status === 'progress' ? (
+                          <>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            Design
+                          </>
+                        ) : (
+                          <>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            Ready
+                          </>
+                        )
                       ) : (
                         <>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                          Pending
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                          Missing
                         </>
                       )}
                     </span>
@@ -194,7 +210,7 @@ const SendToClientPage = () => {
                 {!canSend && (
                   <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--red)', textAlign: 'center', background: 'rgba(239, 68, 68, 0.05)', padding: '10px', borderRadius: '8px' }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                    Requirements not met: Quotation or Design needed.
+                    Requirements not met: Cannot dispatch while Quotation is Pending and Design is in progress.
                   </div>
                 )}
               </div>

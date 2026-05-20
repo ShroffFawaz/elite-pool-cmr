@@ -79,14 +79,6 @@ const LeadTable = ({ type }) => {
       <div className="table-toolbar">
         <div className="table-toolbar-left">
           <SearchBar value={search} onChange={setSearch} placeholder="Search leads..." />
-          <select className="fs" style={{ width: '130px' }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="">All Status</option>
-            <option value="new">New</option>
-            <option value="design">Design</option>
-            <option value="quoted">Quoted</option>
-            <option value="followup">Follow-up</option>
-            <option value="closed">Closed</option>
-          </select>
           <select className="fs" style={{ width: '130px' }} value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
             <option value="">All Priority</option>
             <option value="Urgent">Urgent</option>

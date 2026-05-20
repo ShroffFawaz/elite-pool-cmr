@@ -15,6 +15,7 @@ const ConstructionPage = () => {
   const [viewLogsModal, setViewLogsModal] = useState({ open: false, siteId: null });
   const [stagedPlans, setStagedPlans] = useState({}); // Staging area for plan uploads
   const [localSites, setLocalSites] = useState([]);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     const fetchSites = async () => {
@@ -221,7 +222,7 @@ const ConstructionPage = () => {
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="table-toolbar" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
           <div className="table-toolbar-left">
-             <SearchBar placeholder="Search sites..." />
+             <SearchBar value={search} onChange={setSearch} placeholder="Search sites..." />
           </div>
         </div>
         <div className="tw" style={{ border: 'none' }}>
@@ -230,39 +231,45 @@ const ConstructionPage = () => {
               <tr><th>Site ID</th><th>Client</th><th>Location</th><th>Start Date</th><th>Status</th><th style={{ textAlign: 'right' }}>Actions</th></tr>
             </thead>
             <tbody>
-              {localSites.length > 0 ? localSites.map(s => (
-                <tr key={s.id}>
-                  <td style={{ fontSize: '12px', color: 'var(--sky)', fontWeight: 600 }}>{s.id}</td>
-                  <td>
-                    <div style={{ fontWeight: 700 }}>{s.client}</div>
-                    <div className="mono" style={{ fontSize: '10px', color: 'var(--text3)' }}>LEAD: {s.leadId}</div>
-                  </td>
-                  <td style={{ fontSize: '13px' }}>{s.location}</td>
-                  <td style={{ fontSize: '13px' }}>{s.startDate}</td>
-                  <td><StatusBadge status={s.status === 'active' ? 'design' : 'closed'} /></td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => setPlansModal({ open: true, siteId: s.id })}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                        Plans
-                      </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => fetchSiteLogs(s.id)}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                        View Logs
-                      </button>
-                      <button className="btn btn-sky btn-sm" onClick={() => setLogModal({ open: true, siteId: s.id })}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        Add Log
-                      </button>
-                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => deleteSite(s.site_code)}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )) : (
-                <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--text3)', padding: '40px' }}>No construction sites listed</td></tr>
-              )}
+              {(() => {
+                const filteredSites = localSites.filter(s => {
+                  const q = search.toLowerCase();
+                  return s.id.toLowerCase().includes(q) || s.client.toLowerCase().includes(q) || (s.location && s.location.toLowerCase().includes(q)) || (s.status && s.status.toLowerCase().includes(q));
+                });
+                return filteredSites.length > 0 ? filteredSites.map(s => (
+                  <tr key={s.id}>
+                    <td style={{ fontSize: '12px', color: 'var(--sky)', fontWeight: 600 }}>{s.id}</td>
+                    <td>
+                      <div style={{ fontWeight: 700 }}>{s.client}</div>
+                      <div className="mono" style={{ fontSize: '10px', color: 'var(--text3)' }}>LEAD: {s.leadId}</div>
+                    </td>
+                    <td style={{ fontSize: '13px' }}>{s.location}</td>
+                    <td style={{ fontSize: '13px' }}>{s.startDate}</td>
+                    <td><StatusBadge status={s.status === 'active' ? 'design' : 'closed'} /></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setPlansModal({ open: true, siteId: s.id })}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                          Plans
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => fetchSiteLogs(s.id)}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                          View Logs
+                        </button>
+                        <button className="btn btn-sky btn-sm" onClick={() => setLogModal({ open: true, siteId: s.id })}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                          Add Log
+                        </button>
+                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => deleteSite(s.site_code)}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--text3)', padding: '40px' }}>No construction sites listed</td></tr>
+                );
+              })()}
             </tbody>
           </table>
         </div>

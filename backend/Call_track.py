@@ -12,14 +12,19 @@ router = APIRouter(prefix="/call-track", tags=["Call_track"])
 
 @router.get("/kpi")
 async def kpi(db: Session = Depends(get_db)):
-    # Get Total Team Calls
-    total_calls = db.query(func.sum(AgentDailyStats.calls_today)).filter(AgentDailyStats.call_date == date.today()).scalar() or 0
+    # Get Total Team Calls directly from CallLog
+    total_calls = db.query(func.count(CallLog.id)).filter(CallLog.call_date == date.today()).scalar() or 0
     return {"total_calls": total_calls}
 
 @router.get("/team-stats")
 async def team_stats(db: Session = Depends(get_db)):
-    stats = db.query(AgentDailyStats).filter(AgentDailyStats.call_date == date.today()).all()
-    return stats
+    # Group by agent_name and count today's calls in CallLog
+    results = db.query(
+        CallLog.agent_name,
+        func.count(CallLog.id).label("calls_today")
+    ).filter(CallLog.call_date == date.today()).group_by(CallLog.agent_name).all()
+    
+    return [{"agent_name": r.agent_name, "calls_today": r.calls_today} for r in results]
 
 @router.get("/live-logs")
 async def live_logs(db: Session = Depends(get_db)):
@@ -62,8 +67,12 @@ async def agent_tracking(
     agent_name: str,
     db: Session = Depends(get_db)
 ):
-    schedules = db.query(AgentDailyStats).filter(AgentDailyStats.call_date == date.today()).all()
-    return schedules
+    results = db.query(
+        CallLog.agent_name,
+        func.count(CallLog.id).label("calls_today")
+    ).filter(CallLog.call_date == date.today()).group_by(CallLog.agent_name).all()
+    
+    return [{"agent_name": r.agent_name, "calls_today": r.calls_today} for r in results]
 
 
 @router.get("/all_schedule")
