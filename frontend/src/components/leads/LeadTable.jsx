@@ -35,8 +35,8 @@ const LeadTable = ({ type }) => {
     if (window.confirm(`Are you sure you want to delete lead ${lead_code}?`)) {
       try {
         const endpoint = leadType === 'amc' 
-          ? `http://127.0.0.1:8000/amc-leads/delete/${db_id}`
-          : `http://127.0.0.1:8000/construction-leads/delete/${db_id}`;
+          ? `/amc-leads/delete/${db_id}`
+          : `/construction-leads/delete/${db_id}`;
         
         await axios.delete(endpoint);
         refreshLeads();

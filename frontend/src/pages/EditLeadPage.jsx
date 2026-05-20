@@ -44,8 +44,8 @@ const EditLeadPage = () => {
 
     try {
       const endpoint = lead.leadType === 'amc'
-        ? `http://127.0.0.1:8000/amc-leads/update/${lead.db_id}`
-        : `http://127.0.0.1:8000/construction-leads/update/${lead.db_id}`;
+        ? `/amc-leads/update/${lead.db_id}`
+        : `/construction-leads/update/${lead.db_id}`;
 
       const payload = {
         location: formData.loc,

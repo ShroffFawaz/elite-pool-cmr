@@ -38,7 +38,7 @@ const PipelinePage = () => {
       formData.append('lead_code', leadCode);
       formData.append('new_status', newStatus);
 
-      await axios.put('http://127.0.0.1:8000/pipeline/update-status', formData);
+      await axios.put('/pipeline/update-status', formData);
       
       refreshLeads();
       toast(`✅ Status updated to ${newStatus.toUpperCase()}`, 'success');
@@ -182,7 +182,7 @@ const PipelinePage = () => {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (window.confirm('Delete this lead?')) {
-                                  axios.delete(`http://127.0.0.1:8000/pipeline/delete/${l.id}`).then(() => {
+                                  axios.delete(`/pipeline/delete/${l.id}`).then(() => {
                                     refreshLeads();
                                     toast('🗑️ Lead removed', 'success');
                                   });

@@ -26,7 +26,7 @@ const LeadDetailPage = () => {
       params.append('lead_code', l.id);
       params.append('new_status', selectedStatus);
 
-      await axios.put('http://127.0.0.1:8000/pipeline/update-status', params);
+      await axios.put('/pipeline/update-status', params);
 
       refreshLeads();
       toast(`✅ Status updated to ${selectedStatus.toUpperCase()}`, 'success');
@@ -42,7 +42,7 @@ const LeadDetailPage = () => {
     if (!window.confirm(`Are you sure you want to delete lead ${l.name}?`)) return;
     
     try {
-      await axios.delete(`http://127.0.0.1:8000/pipeline/delete/${l.id}`);
+      await axios.delete(`/pipeline/delete/${l.id}`);
       
       refreshLeads();
       toast(`🗑️ Lead "${l.name}" deleted successfully`, 'success');

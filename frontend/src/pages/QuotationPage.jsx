@@ -158,7 +158,7 @@ const QuotationPage = () => {
       body: `Mark quotation for "${q.client}" as sent?`,
       onConfirm: async () => {
         try {
-          await axios.patch(`http://127.0.0.1:8000/quotation/${q.db_id}/done`);
+          await axios.patch(`/quotation/${q.db_id}/done`);
           await refreshQuotes();
           toast('Quotation marked as sent!', 'success');
           
@@ -327,8 +327,8 @@ const QuotationPage = () => {
                   <span style={{ flex: 1, fontSize: '13px', fontWeight: 600, color: 'var(--sky)' }}>{detailQuote.uploadedFile.name}</span>
                   {detailQuote.uploadedFile && (
                     <>
-                      <a href={`http://127.0.0.1:8000/quotation/file/${detailQuote.db_id}/view`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">👁 View</a>
-                      <a href={`http://127.0.0.1:8000/quotation/file/${detailQuote.db_id}/view`} download={`quotation_${detailQuote.leadId}.pdf`} className="btn btn-sky btn-sm">⬇ Download</a>
+                      <a href={`${API_BASE_URL}/quotation/file/${detailQuote.db_id}/view`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">👁 View</a>
+                      <a href={`${API_BASE_URL}/quotation/file/${detailQuote.db_id}/view`} download={`quotation_${detailQuote.leadId}.pdf`} className="btn btn-sky btn-sm">⬇ Download</a>
                     </>
                   )}
                 </div>

@@ -72,7 +72,7 @@ const DesignPage = () => {
       formData.append('file', ndFile);
 
       toast('Sending request to server...', 'info');
-      await axios.post('http://127.0.0.1:8000/pool-design/new-design', formData);
+      await axios.post('/pool-design/new-design', formData);
       
       await refreshDesigns();
       toast('Design plan created!', 'success');
@@ -112,7 +112,7 @@ const DesignPage = () => {
       
       toast('Submitting revision...', 'info');
       console.log("Submitting revision for lead:", revModal.leadId);
-      await axios.patch(`http://127.0.0.1:8000/pool-design/revision/${revModal.leadId}`, formData);
+      await axios.patch(`/pool-design/revision/${revModal.leadId}`, formData);
       
       await refreshDesigns();
       toast('Revision submitted!', 'success');
@@ -134,7 +134,7 @@ const DesignPage = () => {
       body: `Mark design for "${d.client}" as completed?`,
       onConfirm: async () => {
         try {
-          await axios.patch(`http://127.0.0.1:8000/pool-design/${d.id}/done`);
+          await axios.patch(`/pool-design/${d.id}/done`);
           await refreshDesigns();
           toast('Design marked complete!', 'success');
         } catch (error) {
@@ -152,7 +152,7 @@ const DesignPage = () => {
       body: `Permanently delete design for "${client}"? This cannot be undone.`,
       onConfirm: async () => {
         try {
-          await axios.delete(`http://127.0.0.1:8000/pool-design/${id}`);
+          await axios.delete(`/pool-design/${id}`);
           await refreshDesigns();
           toast('Design deleted', 'success');
         } catch (error) {
@@ -171,7 +171,7 @@ const DesignPage = () => {
     setDetailModal({ open: true, leadId: clientName });
     setDetailLoading(true);
     try {
-      const res = await axios.get(`http://127.0.0.1:8000/pool-design/details/${clientName}`);
+      const res = await axios.get(`/pool-design/details/${clientName}`);
       setDetailData(res.data);
     } catch (err) {
       console.error('Failed to fetch design details:', err);
@@ -361,11 +361,11 @@ const DesignPage = () => {
                       </div>
                       {f.file_url && (
                         <>
-                          <a href={`http://127.0.0.1:8000/pool-design/file/${f.id}/view`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">👁 View</a>
+                          <a href={`/pool-design/file/${f.id}/view`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">👁 View</a>
                           <button className="btn btn-sm" style={{ background: 'var(--red)', color: '#fff', border: 'none' }} onClick={async () => {
                             if (!window.confirm(`Delete "${f.file_name}"?`)) return;
                             try {
-                              await axios.delete(`http://127.0.0.1:8000/pool-design/file/${f.id}`);
+                              await axios.delete(`/pool-design/file/${f.id}`);
                               toast(`${f.file_name} deleted`, 'success');
                               // Refresh the detail data
                               setDetailData(prev => ({ ...prev, files: prev.files.filter(x => x.id !== f.id) }));

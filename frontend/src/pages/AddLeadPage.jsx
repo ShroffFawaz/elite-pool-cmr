@@ -21,8 +21,8 @@ const AddLeadPage = () => {
 
     try {
       const endpoint = formData.lt === 'amc' 
-        ? 'http://127.0.0.1:8000/amc-leads/Import_Leads_csv_amc'
-        : 'http://127.0.0.1:8000/construction-leads/Import_Leads_csv_construction';
+        ? {`${API_BASE_URL}/amc-leads/Import_Leads_csv_amc`}
+        : {`${API_BASE_URL}/construction-leads/Import_Leads_csv_construction`};
 
       await axios.post(endpoint, formDataImport, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -34,6 +34,7 @@ const AddLeadPage = () => {
     } catch (error) {
       console.error("Error importing leads:", error);
       toast('❌ Failed to import leads', 'error');
+import { API_BASE_URL } from '../context/AppContext';
     }
   };
 
@@ -53,7 +54,7 @@ const AddLeadPage = () => {
         notes: formData.notes
       };
 
-      await axios.post('http://127.0.0.1:8000/add-leads/create', payload);
+      await axios.post('/add-leads/create', payload);
       
       refreshLeads();
       
