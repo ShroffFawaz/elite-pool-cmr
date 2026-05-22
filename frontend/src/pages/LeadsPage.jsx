@@ -95,7 +95,7 @@ const LeadsPage = ({ type }) => {
                Supported columns: <strong>name, phone, location, requirements</strong><br/>
                The import will automatically be tagged as <strong>{type.toUpperCase()}</strong>
             </div>
-            <button className="btn btn-sky btn-sm" style={{ marginTop: '20px' }}>Browse Files</button>
+            <span className="btn btn-sky btn-sm" style={{ display: 'inline-block', marginTop: '20px' }}>Browse Files</span>
           </label>
         </div>
         <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
